@@ -311,11 +311,56 @@ $ srun -n128 -N32 --gpus-per-task=1 python3 ./runner.py
 
 
 ---
+layout: two-cols
+layoutClass: gap-1
+---
 
-# writing sbatch jobs
+# Using uenv in sbatch jobs
 
-- avoid `#SBATCH --uenv` etc
-- instead use `uenv run` and `srun --uenv`
+The `--uenv` and `--view` flags are available sbatch:
+```bash
+#!/bin/bash
+#SBATCH --time=00:10:00
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --uenv=namd/3.0:v3
+#SBATCH --view=namd-single-node
+
+# uses the namd uenv
+srun namd3 +p 29 +pmeps 5 +setcpuaffinity +devices 0,1,2,3
+
+# override the default uenv
+srun --uenv=prgenv-gnu/24.11 --view=default ./post-proc
+```
+
+The uenv and view will be loaded inside the script, and inside the `srun` call.
+
+**Fun fact**: the commands in an sbatch script execute on the first compute node in your job.
+
+::right::
+
+**Best Practice**: specify the uenv where it will be used
+
+```bash
+#!/bin/bash
+#SBATCH --time=00:10:00
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+
+# run a serial pre processing step
+uenv run --uenv=prgenv-gnu/24.11 --view=default \
+    python3 ./generate-inputs.py
+
+# run the simulation
+srun  --uenv=namd/3.0:v3 --view=namd-single-node \
+    namd3 +p 29 +pmeps 5 +setcpuaffinity +devices 0,1,2,3
+
+# override the default uenv
+srun -n4 -N1 --uenv=paraview --view=paraview \
+    ./generate-images
+```
+
+**Why?** because the script will run in a "clean" environment, with each call **encapsulated** in its target environment.
 
 ---
 
