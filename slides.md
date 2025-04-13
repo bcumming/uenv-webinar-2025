@@ -160,36 +160,155 @@ uenv commands accept full or partial labels. The following are valid in differen
 
 ---
 
-# finding and listing uenv
+# Finding uenv
 
-A **registry** is a 
+<div class="flex justify-center">
+    <img src="./images/uenv-store.png" class="h-45" alt="Alt text for the image">
+</div>
 
-Registry vs. Repository
+The **registry** is a server with all of the uenv provided by CSCS.
+* `uenv image find` will list available images: e.g. `uenv image find namd@eiger`
 
-Find vs. List
+A **repository** is a filesystem folder with uenv that have been downloaded:
+* `uenv image ls` will list pulled images: e.g. `uenv image ls pytorch`
 
----
-
-# getting uenv
-
-`uenv image pull`
-
-`uenv image add`
+uenv must be pulled to a repository before you can use them.
 
 ---
 
-# running uenv
+# Dowloading uenv
 
-`uenv run`
-- views and environment variables
+Use `ueng image pull` to download a uenv from the registry.
+
+<div class="flex justify-center">
+Example: download the latest version of `prgenv-gnu` on Eiger:
+</div>
+
+```bash
+$ uenv image ls prgenv-gnu
+uenv                 arch  system  id                size(MB)  date
+prgenv-gnu/24.11:v1  zen2  eiger   0b6ab5fc4907bb38     572    2024-11-27
+$ uenv image find prgenv-gnu
+uenv                 arch  system  id                size(MB)  date
+prgenv-gnu/24.11:v1  zen2  eiger   0b6ab5fc4907bb38     572    2024-11-27
+prgenv-gnu/24.11:v2  zen2  eiger   9c9bbe55b6142eab     576    2025-03-31
+prgenv-gnu/24.7:v1   zen2  eiger   7f68f4c8099de257     478    2024-07-01
+$ uenv image pull prgenv-gnu/24.11:v2
+pulling 9c9bbe55b6142eab 100.00% ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 576/576 (0.00 MB/s)
+updating prgenv-gnu/24.11:v2@eiger%zen2
+$ uenv image ls prgenv-gnu
+uenv                 arch  system  id                size(MB)  date
+prgenv-gnu/24.11:v1  zen2  eiger   0b6ab5fc4907bb38     572    2024-11-27
+prgenv-gnu/24.11:v2  zen2  eiger   9c9bbe55b6142eab     576    2025-03-31
+```
+
+> **Note**: the `24.11:v1` version of `prgenv-gnu` is still available to use.
 
 ---
 
-# interactive: running in a shell
+# `uenv run`: execute a command in an environment
+
+`uenv run` runs a command with a uenv activated - and returns after it has been run
+
+```
+$ which mpicc
+which: no mpicc in (/users/bcumming/.local/x86_64/bin:/usr/local/bin:/usr/bin:/bin:/usr/lpp/mmfs/bin:/usr/lib/mit/bin)
+$ uenv run --view=default prgenv-gnu/24.11:v2 -- which mpicc
+/user-environment/env/default/bin/mpicc
+```
+
+This "wraps" the call with the environment:
+* later calls are not affected by earlier calls
+* compare this to interleaving `module load/swap/unload` between application calls
+
+```bash
+# use a text editor provided by a uenv
+$ uenv run --view=ed editors -- nvim
+# use the python REPL
+$ uenv run --view=default prgenv-gnu/24.11:v2 -- python
+# use a graphical application
+$ uenv run --view=default netcdf-tools/2024 -- ncview sst_nmc_daSilva_anoms.66-03.DJF.nc
+```
 
 ---
 
-# using srun to run jobs
+# `uenv start`: use uenv interactively
+
+`uenv start` loads a shell with the environment loaded - the following calls are equivalent:
+
+```
+uenv start prgenv-gnu/24.11:v2 --view=default
+uenv run   prgenv-gnu/24.11:v2 --view=default bash
+```
+
+* `uenv start` will use your default shell, which for 99% of users on Alps is `bash`
+
+Useful for compilation, working in a Python/Julia REPL and exploring uenv -- use `exit` or `<ctrl-d>` to end the session
+
+```bash
+# start the session
+$ uenv start prgenv-gnu/24.11:v2 --view=default
+# do work in the sesssion
+$ CC=mpicc CXX=mpic++ cmake ..
+# end the session
+$ exit
+```
+
+**Warning**: `uenv start` will not work in `~/.bashrc` or a SLURM batch job
+* `module load` changes the current shell - `uenv start` starts a new shell.
+
+---
+layout: two-cols
+layoutClass: gap-2
+---
+
+# SLURM speaks uenv
+
+On Alps the uenv SLURM plugin configures uenv on the compute nodes of jobs.
+
+When you call `srun` or `sbatch` on the login node with `--uenv` and `--view` flags:
+* **login node**: Check the parameters, find the SquashFS image and set environment variables
+    * fail early on the login node if there is an error without using resources.
+* **compute**: mount the SquashFS image before forking the MPI ranks on the node
+
+The SquashFS image is mounted once per node.
+
+::right::
+
+```mermaid {scale:0.8}
+graph TB
+    subgraph login node
+    srun[srun --uenv --view] --> B[check parameters and package settings]
+    end
+    B --> C
+    subgraph compute node
+    C[mount the SquashFS image] --> D[fork ranks-per-node]
+    D --> E[rank 0]
+    D --> F[...]
+    D --> G[rank n-1]
+    end
+```
+
+---
+
+# SLURM integration: srun
+
+Use the `--uenv` and `--view` flags with `srun`... the following are eqivalent:
+```
+$ srun -n4 -N1 uenv run prgenv-gnu --view=default python3 ./big-job.sh
+$ srun -n4 -N1 --uenv prgenv-gnu --view=default python3 ./big-job.sh
+```
+
+Using the SLURM plugin is more efficient:
+* SquashFS is mounted only once
+* It fails immediately without using resources if there is an invalid parameter
+
+SLURM detects and uses the calling uenv environment on compute nodes (just like modules)
+```bash
+$ uenv start prgenv-gnu/24.11:v2 --view=default
+$ srun -n128 -N32 --gpus-per-task=1 python3 ./runner.py
+```
+
 
 ---
 
