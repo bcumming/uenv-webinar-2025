@@ -7,6 +7,8 @@ theme: ./slidev-theme-cscs
 
 Ben Cumming
 
+bcumming.github.io/uenv-webinar-2025
+
 CSCS Webinar 2025
 
 ---
@@ -17,15 +19,15 @@ On Daint, Santis and Clariden CSCS supports two software environments:
 * **uenv**: self-contained application and use-case specific software stacks
 * **container engine**: container runtime with SLURM integration
 
-Daint has the CPE installed through the `cray` module
-* provided "as is" -- and will be deployed via containers to continue providing up to date installations
+Daint has the Cray Programming Environment modules (CPE) installed through the `cray` module:
+* provided "as is" -- will be deployed via containers to provide up-to-date versions.
 
 Eiger provides:
 * CPE and EasyBuild recipes
 * uenv
 * Sarus for containers
 
-**Eiger will be updated to match Daint in early June**: Pilatus will be available for users to prepare.
+**Eiger will be updated to [match Daint by June](https://status.cscs.ch/status-page/9e188a14-9e52-4a14-af4b-b9299bf1c719/announcements/cbc0c451-e8d4-4af1-9475-4408b5ee9009)** - a test cluster will be available for preparation.
 
 ---
 layout: two-cols
@@ -237,8 +239,8 @@ $ uenv run --view=default netcdf-tools/2024 -- ncview sst_nmc_daSilva_anoms.66-0
 `uenv start` loads a shell with the environment loaded - the following calls are equivalent:
 
 ```
-uenv start prgenv-gnu/24.11:v2 --view=default
 uenv run   prgenv-gnu/24.11:v2 --view=default bash
+uenv start prgenv-gnu/24.11:v2 --view=default
 ```
 
 * `uenv start` will use your default shell, which for 99% of users on Alps is `bash`
@@ -254,8 +256,34 @@ $ CC=mpicc CXX=mpic++ cmake ..
 $ exit
 ```
 
-**Warning**: `uenv start` will not work in `~/.bashrc` or a SLURM batch job
-* `module load` changes the current shell - `uenv start` starts a new shell.
+> **Warning**: It is not possible to automatically load a uenv inside a script, wrap the script in `uenv run` instead.<br>
+> `module load` changes the current shell - `uenv start` starts a new shell.<br>
+> **Corollary**: `uenv start` will not work in `~/.bashrc` or a SLURM batch script.
+
+---
+
+# Views
+
+The `modules` and `spack` views are generated automatically:
+* `modules` provides [modules of packages](https://eth-cscs.github.io/cscs-docs/software/uenv/#modules);
+* `spack` sets [environment variables that help Spack users](https://eth-cscs.github.io/cscs-docs/build-install/uenv/#building-software-using-spack).
+
+Other recipe specific views create a path with the following structure:
+```
+/user-environment/env/<view-name>
+├── lib
+├── lib64
+├── bin
+├── include
+...
+└── share
+```
+With symlinks used to link to link the software in the view to the location where it was installed, e.g.:
+```bash
+$ realpath /user-environment/env/default/bin/cmake
+/user-environment/linux-sles15-zen2/gcc-13.3.0/cmake-3.30.5-yfndm72rv7msnctkb2nj6hj6k3pn2yi5/bin/cmake
+```
+
 
 ---
 layout: two-cols
@@ -266,7 +294,7 @@ layoutClass: gap-2
 
 On Alps the uenv SLURM plugin configures uenv on the compute nodes of jobs.
 
-When you call `srun` or `sbatch` on the login node with `--uenv` and `--view` flags:
+When `srun` or `sbatch` are called on the login node with `--uenv` and `--view` flags:
 * **login node**: Check the parameters, find the SquashFS image and set environment variables
     * fail early on the login node if there is an error without using resources.
 * **compute**: mount the SquashFS image before forking the MPI ranks on the node
@@ -278,7 +306,7 @@ The SquashFS image is mounted once per node.
 ```mermaid {scale:0.8}
 graph TB
     subgraph login node
-    srun[srun --uenv --view] --> B[check parameters and package settings]
+    srun[srun --uenv --view] --> B[check parameters and forward environment]
     end
     B --> C
     subgraph compute node
@@ -333,7 +361,7 @@ srun namd3 +p 29 +pmeps 5 +setcpuaffinity +devices 0,1,2,3
 srun --uenv=prgenv-gnu/24.11 --view=default ./post-proc
 ```
 
-The uenv and view will be loaded inside the script, and inside the `srun` call.
+The uenv and view will be loaded inside the script, and for the first `srun` call.
 
 **Fun fact**: the commands in an sbatch script execute on the first compute node in your job.
 
@@ -387,8 +415,6 @@ True
 * e.g. `clariden`, `santis`, and `daint` are almost identical at the OS level
 * large divergence between cluster configurations might break some uenv in the future
 
-
-
 ---
 
 # Demo time: build an application
@@ -396,7 +422,7 @@ True
 Build two applications using `prgenv-gnu`:
 
 * easy: [CSCS Affinity](https://github.com/bcumming/affinity)
-* tricky: [MicroHH 2.0](https://microhh.readthedocs.io/en/latest/index.html)
+* trickier: [MicroHH 2.0](https://microhh.readthedocs.io/en/latest/index.html)
 
 ---
 
@@ -406,7 +432,7 @@ Build two applications using `prgenv-gnu`:
 <br>
 <br>
 
-## Thank you!
+## Thank you
 
 <br>
 <br>
