@@ -180,11 +180,9 @@ uenv must be pulled to a repository before you can use them.
 
 # Dowloading uenv
 
-Use `ueng image pull` to download a uenv from the registry.
+Use `uenv image pull` to download a uenv from the registry.
 
-<div class="flex justify-center">
 Example: download the latest version of `prgenv-gnu` on Eiger:
-</div>
 
 ```
 $ uenv image ls prgenv-gnu
