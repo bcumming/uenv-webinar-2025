@@ -43,7 +43,7 @@ The up-to-date `uenv` documentation is available on the **new CSCS documentation
 * [programming environment uenv](https://eth-cscs.github.io/cscs-docs/software/prgenv/)
 
 The uenv command line provides context-sensitve help using the `--help` flag:
-```bash
+```
 uenv --help
 uenv image --help
 uenv image find --help
@@ -146,17 +146,17 @@ uenv are self-contained:
 
 # Describing uenv
 
-uenv have a label: `name/version:tag@system%uarch`
-* `name`: the name, e.g. `prgenv-gnu`, `pytorch` or `gromacs`
-* `version`: version or release date, e.g. `2025.1` or `4.3`.
-* `tag`: for handling multiple
-* `system`: the cluster, e.g. `daint`, `eiger`, `santis`, etc.
+uenv have a label: `name/version:tag@system%uarch`:
+* `name`: the name, e.g. `prgenv-gnu`, `pytorch` or `gromacs`;
+* `version`: version or release date, e.g. `2025.1` or `4.3`;
+* `tag`: for releases of the same version (bug-fixes and small improvements);
+* `system`: the cluster, e.g. `daint`, `eiger`, `santis`, etc;
 * `uarch`: the node architecture:
-    * `gh200`: clariden, daint, santis
-    * `zen2`: eiger, bristen
-    * `a100`: bristen, balfrin
+    * `gh200`: clariden, daint, santis;
+    * `zen2`: eiger, bristen;
+    * `a100`: bristen, balfrin.
 
-uenv commands accept full or partial labels. The following are valid in different contexts
+uenv commands accept full or partial labels. The following are valid in different contexts:
 
 `prgenv-gnu/24.11:v1@daint`, `@*`, `:v1`, `namd`, `prgenv-gnu%gh200`
 
@@ -186,7 +186,7 @@ Use `ueng image pull` to download a uenv from the registry.
 Example: download the latest version of `prgenv-gnu` on Eiger:
 </div>
 
-```bash
+```
 $ uenv image ls prgenv-gnu
 uenv                 arch  system  id                size(MB)  date
 prgenv-gnu/24.11:v1  zen2  eiger   0b6ab5fc4907bb38     572    2024-11-27
@@ -223,7 +223,7 @@ This "wraps" the call with the environment:
 * later calls are not affected by earlier calls
 * compare this to interleaving `module load/swap/unload` between application calls
 
-```bash
+```
 # use a text editor provided by a uenv
 $ uenv run --view=ed editors -- nvim
 # use the python REPL
@@ -247,7 +247,7 @@ uenv start prgenv-gnu/24.11:v2 --view=default
 
 Useful for compilation, working in a Python/Julia REPL and exploring uenv -- use `exit` or `<ctrl-d>` to end the session
 
-```bash
+```
 # start the session
 $ uenv start prgenv-gnu/24.11:v2 --view=default
 # do work in the sesssion
@@ -280,7 +280,7 @@ Other recipe specific views create a path with the following structure:
 ```
 
 Symlinks link to the software "in the view" to the location where it was installed, and environment variables "point to" the view path, e.g. `PATH=/user-environment/env/default/bin:$PATH`
-```bash
+```
 $ realpath /user-environment/env/default/bin/cmake
 /user-environment/linux-sles15-zen2/gcc-13.3.0/cmake-3.30.5-yfndm72rv7msnctkb2nj6hj6k3pn2yi5/bin/cmake
 ```
@@ -333,7 +333,7 @@ Using the SLURM plugin is more efficient:
 * and it fails immediately without using resources if there is an invalid parameter.
 
 SLURM detects and uses the calling uenv environment on compute nodes (just like modules)
-```bash
+```
 $ uenv start prgenv-gnu/24.11:v2 --view=default
 $ srun -n128 -N32 --gpus-per-task=1 python3 ./runner.py
 ```
@@ -358,7 +358,7 @@ The `--uenv` and `--view` flags are available sbatch:
 # uses the namd uenv
 srun namd3 +p 29 +pmeps 5 +setcpuaffinity +devices 0,1,2,3
 
-# override the default uenv
+# override the top-level namd uenv
 srun --uenv=prgenv-gnu/24.11 --view=default ./post-proc
 ```
 
@@ -384,7 +384,7 @@ uenv run --uenv=prgenv-gnu/24.11 --view=default \
 srun  --uenv=namd/3.0:v3 --view=namd-single-node \
     namd3 +p 29 +pmeps 5 +setcpuaffinity +devices 0,1,2,3
 
-# override the default uenv
+# post-process
 srun -n4 -N1 --uenv=paraview --view=paraview \
     ./generate-images
 ```
@@ -399,7 +399,7 @@ The `CLUSTER_NAME` variable defines the cluster on Alps.
 
 `uenv` and the SLURM plugin use this variable to filter results.
 
-```bash
+```
 $ echo $CLUSTER_NAME
 santis
 $ uenv image find pytorch --no-header
