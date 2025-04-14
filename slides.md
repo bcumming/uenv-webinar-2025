@@ -278,7 +278,8 @@ Other recipe specific views create a path with the following structure:
 ...
 └── share
 ```
-With symlinks used to link to link the software in the view to the location where it was installed, e.g.:
+
+Symlinks link to the software "in the view" to the location where it was installed, and environment variables "point to" the view path, e.g. `PATH=/user-environment/env/default/bin:$PATH`
 ```bash
 $ realpath /user-environment/env/default/bin/cmake
 /user-environment/linux-sles15-zen2/gcc-13.3.0/cmake-3.30.5-yfndm72rv7msnctkb2nj6hj6k3pn2yi5/bin/cmake
@@ -323,13 +324,13 @@ graph TB
 
 Use the `--uenv` and `--view` flags with `srun`... the following are eqivalent:
 ```
-$ srun -n4 -N1 uenv run prgenv-gnu --view=default python3 ./big-job.sh
-$ srun -n4 -N1 --uenv prgenv-gnu --view=default python3 ./big-job.sh
+$ srun -n4 -N1 uenv run prgenv-gnu/24.11 --view=default python3 ./big-job.sh
+$ srun -n4 -N1 --uenv=prgenv-gnu/24.11   --view=default python3 ./big-job.sh
 ```
 
 Using the SLURM plugin is more efficient:
-* SquashFS is mounted only once
-* It fails immediately without using resources if there is an invalid parameter
+* SquashFS is mounted only once per node;
+* and it fails immediately without using resources if there is an invalid parameter.
 
 SLURM detects and uses the calling uenv environment on compute nodes (just like modules)
 ```bash
@@ -346,7 +347,7 @@ layoutClass: gap-1
 # Using uenv in sbatch jobs
 
 The `--uenv` and `--view` flags are available sbatch:
-```bash
+```
 #!/bin/bash
 #SBATCH --time=00:10:00
 #SBATCH --nodes=1
@@ -369,7 +370,7 @@ The uenv and view will be loaded inside the script, and for the first `srun` cal
 
 **Best Practice**: specify the uenv where it will be used
 
-```bash
+```
 #!/bin/bash
 #SBATCH --time=00:10:00
 #SBATCH --nodes=1
